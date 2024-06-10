@@ -11,6 +11,10 @@ const { StreamService } = require('./services/stream-service');
 const { TranscriptionService } = require('./services/transcription-service');
 const { TextToSpeechService } = require('./services/tts-service');
 
+// **Import the transcript processor**
+const { cleanTranscript, processTranscript } = require('./services/transcriptProcessor');
+
+
 const app = express();
 ExpressWs(app);
 
@@ -119,10 +123,29 @@ app.ws('/connection', (ws) => {
     streamService.on('audiosent', (markLabel) => {
       marks.push(markLabel);
     });
+
+        // **Listen for full transcript and process it**
+        gptService.on('fullTranscript', async (fullTranscript) => {
+          console.log('Received full transcript:'.blue, fullTranscript);
+    
+          // Clean the transcript
+          const cleanedTranscript = cleanTranscript(fullTranscript);
+          console.log('Cleaned Transcript:'.bgMagenta, cleanedTranscript);
+    
+          // // Process the cleaned transcript
+          // const medication = 'adderall'; // Use the actual medication queried
+          // const dosage = '20mg'; // Use the actual dosage queried
+          // const processResult = await processTranscript(cleanedTranscript, medication, dosage);
+    
+          // console.log('Process result:', processResult);
+          // // TODO: Update the database with the result
+        });
   } catch (err) {
     console.log(err);
   }
 });
+
+
 
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);

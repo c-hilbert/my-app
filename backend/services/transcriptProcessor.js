@@ -1,7 +1,13 @@
+require('dotenv').config(); // Load environment variables from .env file
+const { OpenAI } = require('openai'); // *Import OpenAI module*
+
 const axios = require('axios');
 
 
 async function sendTranscriptToChatGPT(transcript, originalDose) {
+    const openai = new OpenAI(process.env.OPENAI_API_KEY); // *Instantiate OpenAI client*
+
+    console.log('openaI api key:', process.env.OPENAI_API_KEY);
     const prompt = `
     Extract medication availability from the following conversation. The original dose inquired about is "${originalDose}". The output should be in JSON format with "available" as true or false, "specific_dose_unavailable" as a list of doses that are not available (if any), and "more_info_needed" as true or false.
 
@@ -15,18 +21,24 @@ async function sendTranscriptToChatGPT(transcript, originalDose) {
     Conversation: ${transcript}
     `;
 
+   
     try {
-        const response = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-            prompt: prompt,
+        const completion = await openai.chat.completions.create({ // *Update API endpoint and payload structure*
+            model: 'gpt-4',
+            messages: [{ role: 'system', content: prompt }],
             max_tokens: 150,
-        }, {
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
         });
 
-        return response.data.choices[0].text.trim();
+        console.log("OpenAI response:", completion);
+        let aiResponse = completion.choices[0].message.content.trim();
+        console.log("AI response:", aiResponse);
+
+        if (!aiResponse) {
+            console.error("Error: OpenAI API returned an undefined data object.");
+            return null;
+        }
+
+        return aiResponse;
     } catch (error) {
         console.error('Error sending transcript to ChatGPT:', error);
         throw error;
@@ -51,7 +63,7 @@ function cleanTranscript(transcript) {
   module.exports = {
     cleanTranscript,
   };
-  
+
 async function processTranscript(transcript, originalDose) {
     const cleanedTranscript = cleanTranscript(transcript);
     const result = await sendTranscriptToChatGPT(cleanedTranscript, originalDose);
