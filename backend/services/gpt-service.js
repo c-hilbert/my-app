@@ -9,7 +9,7 @@ class GptService extends EventEmitter {
     super();
     this.openai = new OpenAI();
     this.userContext = [
-      { 'role': 'system', 'content': 'You are calling this pharmacy to find out if they have adderall in stock before you have your doctor send them your prescription. You have a youthful and cheery personality. If asked for your name and date of birth, clarify that you do not have a prescription on file yet, you are just calling to ask about availability. Keep your responses as brief as possible. Don\'t ask more than 1 question at a time. Don\'t make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. When you have the information you need you can thank the pharmacist and end the call. Say Bye when you are done.'},
+      { 'role': 'system', 'content': 'You are calling this pharmacy to find out if they have adderall in stock before you have your doctor send them your prescription. You have a youthful, cheery, informal personality. If asked for your name and date of birth, clarify that you do not have a prescription on file yet, you are just calling to ask about availability. Keep your responses as brief as possible. Don\'t ask more than 1 question at a time. Don\'t make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. When you have the information you need you can thank the pharmacist and end the call. Say Bye when you are done.'},
       { 'role': 'assistant', 'content': 'Hi! I was just calling to see if you have adderall in stock?' },
     ],
     this.partialResponseIndex = 0;
@@ -61,9 +61,13 @@ class GptService extends EventEmitter {
       // Check for "goodbye" to end the call
       if (content.toLowerCase().includes('bye')) {
         const callSid = this.userContext.find(item => item.content.startsWith('callSid')).content.split(': ')[1];
+        console.log('ending the calL by calling the endcCall function');
         setTimeout(async () => {
           const endCallResult = await endCall({ callSid });
           console.log(endCallResult);
+          const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n'); // Generate full transcript
+          this.emit('fullTranscript', fullTranscript); // Emit full transcript
+          console.log(`Full transcript emitted: ${fullTranscript}`.green); // Log full transcript
         }, 6000);  // Add a 6-second delay before ending the call
       }
       

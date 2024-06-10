@@ -28,6 +28,7 @@ class TranscriptionService extends EventEmitter {
         if (alternatives) {
           text = alternatives[0]?.transcript;
         }
+
         
         // if we receive an UtteranceEnd and speech_final has not already happened then we should consider this the end of of the human speech and emit the transcription
         if (transcriptionEvent.type === 'UtteranceEnd') {
@@ -49,6 +50,8 @@ class TranscriptionService extends EventEmitter {
           if (transcriptionEvent.speech_final === true) {
             this.speechFinal = true; // this will prevent a utterance end which shows up after speechFinal from sending another response
             this.emit('transcription', this.finalResult);
+          //  console.log(`Final transcript emitted: ${this.finalResult}`.green);
+
             this.finalResult = '';
           } else {
             // if we receive a message without speechFinal reset speechFinal to false, this will allow any subsequent utteranceEnd messages to properly indicate the end of a message
@@ -76,6 +79,9 @@ class TranscriptionService extends EventEmitter {
 
       this.dgConnection.on(LiveTranscriptionEvents.Close, () => {
         console.log('STT -> Deepgram connection closed'.yellow);
+        this.emit('transcription', this.finalResult); // Emit final transcript on connection close
+       // console.log(`Final transcript emitted on close: ${this.finalResult}`.green); // Log final transcript on close
+        this.finalResult = ''; // Clear final result after emitting
       });
     });
   }
