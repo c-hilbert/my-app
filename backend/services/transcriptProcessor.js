@@ -2,6 +2,8 @@ require('dotenv').config(); // Load environment variables from .env file
 const { OpenAI } = require('openai'); // *Import OpenAI module*
 
 const axios = require('axios');
+const pharmacyModel = require('../models/pharmacyModel');
+
 
 
 async function sendTranscriptToChatGPT(transcript, originalDose) {
@@ -10,17 +12,17 @@ async function sendTranscriptToChatGPT(transcript, originalDose) {
     console.log('openaI api key:', process.env.OPENAI_API_KEY);
     console.log('sending transcript to chatgpt');
     const prompt = `
-    Extract medication availability from the following conversation. The original dose inquired about is "${originalDose}". The output should be in JSON format with "available" as true or false, "specific_dose_unavailable" as a list of doses that are not available (if any), and "more_info_needed" as true or false.
+Extract medication availability from the following conversation. The original dose inquired about is "${originalDose}". The output should be in JSON format with the following keys:
+- "available": a boolean indicating if the medication is available.
+- "more_info_needed": a boolean indicating if the specific dose that the user is asking about is unavailable, but other doses might be available. This will always be false if "available" is true.
 
-    Example Output:
-    {
-      "available": true,
-      "specific_dose_unavailable": [],
-      "more_info_needed": false
-    }
+Example Output:
+{
+  "available": true,
+  "more_info_needed": false
+}
 
-    Conversation: ${transcript}
-    `;
+Conversation: ${transcript}`;
 
    
     try {
@@ -32,14 +34,16 @@ async function sendTranscriptToChatGPT(transcript, originalDose) {
 
         console.log("OpenAI response:", completion);
         let aiResponse = completion.choices[0].message.content.trim();
-        console.log("AI response:", aiResponse);
+        const result = JSON.parse(aiResponse); 
+
+        console.log("AI response:", result);
 
         if (!aiResponse) {
             console.error("Error: OpenAI API returned an undefined data object.");
             return null;
         }
 
-        return aiResponse;
+        return result;
     } catch (error) {
         console.error('Error sending transcript to ChatGPT:', error);
         throw error;
@@ -61,10 +65,23 @@ function cleanTranscript(transcript) {
     return filteredLines.join('\n');
   }
   
-async function processTranscript(transcript, originalDose) {
-    console.log('processing transcript with '.blue,  originalDose);
+  async function processTranscript(transcript, originalDose, pharmacyId, medicationType) {
     const cleanedTranscript = cleanTranscript(transcript);
     const result = await sendTranscriptToChatGPT(cleanedTranscript, originalDose);
+    console.log('Processed Transcript Result from processTranscript function:', result);
+    console.log('result.available:', result.available);
+
+    if (result.available) {
+        await pharmacyModel.updateAllDosagesAvailable(pharmacyId, medicationType);
+    } else if (!result.available && result.more_info_needed) {
+        await pharmacyModel.updateSpecificDosageToNo(pharmacyId, medicationType, originalDose);
+    } else {
+        await pharmacyModel.updateAllDosagesUnavailable(pharmacyId, medicationType);
+    }
+    
+    // You can also record the call if necessary
+    //await pharmacyModel.recordCall(pharmacyId, medicationId, cleanedTranscript, result);
+
     return result;
 }
 

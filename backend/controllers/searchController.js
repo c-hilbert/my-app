@@ -8,6 +8,11 @@ exports.findNearbyPharmacies = async (req, res) => {
     const pharmacies = await googleMapsService.getUniquePharmaciesWithDetails(location);
     console.log('Found pharmacies:', pharmacies);
 
+    // Insert or update each pharmacy in the database
+    for (const pharmacy of pharmacies) {
+      await pharmacyModel.insertOrUpdatePharmacy(pharmacy);
+    }
+
     const result = await this.checkMedicationAvailability(pharmacies, medication, dosage);
 
     res.json(result);
@@ -68,16 +73,6 @@ exports.findNearbyPharmacies = async (req, res) => {
 //   return { status: 'Unknown', pharmacies: pharmacyStatuses };
 // };
 //helper function 
-
-const storePharmacy = (pharmacy, pharmacyDetails, status) => {
-  return {
-    pharmacy: pharmacy,
-    medications: pharmacyDetails,
-    status: status,
-    address: pharmacy.vicinity, // Added details
-    phoneNumber: pharmacy.phone_number // Added details
-  };
-};
 
 
 exports.checkMedicationAvailability = async (pharmacies, medicationType, medicationDosage) => {
