@@ -2,7 +2,45 @@ const { processTranscript } = require('../services/transcriptProcessor');
 const db = require('../config/db');
 require('dotenv').config();
 
+async function setupDatabase() {
+    // Clean up existing duplicates
+    await db.execute(`
+        DELETE pm1 FROM pharmacy_medications pm1
+        INNER JOIN pharmacy_medications pm2 
+        WHERE 
+            pm1.id > pm2.id AND 
+            pm1.pharmacy_id = pm2.pharmacy_id AND 
+            pm1.medication_id = pm2.medication_id;
+    `);
+
+    // Insert or update pharmacies
+    await db.execute(`
+        INSERT INTO pharmacies (id, name, address, phone_number)
+        VALUES ('pharmacy_1', 'Pharmacy 1', '123 Street', '1234567890'),
+               ('pharmacy_2', 'Pharmacy 2', '456 Avenue', '0987654321')
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name), address = VALUES(address), phone_number = VALUES(phone_number)
+    `);
+
+    // Insert or update pharmacy medications
+    await db.execute(`
+        INSERT INTO pharmacy_medications (pharmacy_id, medication_id, available, more_info_needed)
+        VALUES ('pharmacy_1', 1, NULL, NULL),
+               ('pharmacy_1', 2, NULL, NULL),
+               ('pharmacy_1', 3, NULL, NULL),
+               ('pharmacy_1', 4, NULL, NULL),
+               ('pharmacy_2', 1, NULL, NULL),
+               ('pharmacy_2', 2, NULL, NULL),
+               ('pharmacy_2', 3, NULL, NULL),
+               ('pharmacy_2', 4, NULL, NULL)
+        ON DUPLICATE KEY UPDATE
+            available = VALUES(available), more_info_needed = VALUES(more_info_needed)
+    `);
+}
+
 async function testProcessTranscript() {
+    await setupDatabase();
+
     const testCases = [
         {
             transcript: `assistant: Hi! I was just calling to see if you have adderall in stock?
@@ -56,4 +94,3 @@ async function testProcessTranscript() {
 }
 
 testProcessTranscript();
-
