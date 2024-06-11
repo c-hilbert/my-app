@@ -3,6 +3,8 @@ require('colors');
 const express = require('express');
 const ExpressWs = require('express-ws');
 const router = express.Router();
+let clients = [];
+
 //const makeOutboundCall = require('./controllers/callController'); // Ensure the path is correct
 
 
@@ -41,6 +43,35 @@ app.post('/incoming', (req, res) => {
   </Response>
   `);
 });
+
+// SSE endpoint
+app.get('/events', (req, res) => {
+  console.log('Client connected to /events'); // Log when a client connects
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const clientId = Date.now();
+  const newClient = {
+      id: clientId,
+      res,
+  };
+  clients.push(newClient);
+
+  req.on('close', () => {
+    console.log('Client disconnected from /events'); // Log when a client disconnects
+
+      clients = clients.filter(client => client.id !== clientId);
+  });
+});
+
+// Function to send updates to all connected clients
+function updateCallStatus(status) {
+  clients.forEach(client => {
+      client.res.write(`data: ${JSON.stringify(status)}\n\n`);
+  });
+}
 
 // router.post('/initiate-call', async (req, res) => {
 //   try {
@@ -141,3 +172,8 @@ app.ws('/connection', (ws) => {
 
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
+
+
+module.exports = {
+  updateCallStatus,
+};

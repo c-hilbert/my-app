@@ -14,7 +14,7 @@ const FindingPharmaciesScreen = ({ route, navigation }) => {
     const findPharmacies = async () => {
       try {
         // Simulate a delay before making the API call
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
   
         const response = await fetch(`https://${SERVER}/search/find-pharmacies`, {
           method: 'POST',

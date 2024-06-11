@@ -13,6 +13,7 @@ import CustomButton from '../components/CustomButton';
 
 const StartCallingScreen = ({ route, navigation }) => {
   const { pharmacies, medication } = route.params;
+  console.log('pharmacies:', pharmacies)
 
   const handleStartCall = async () => {
     if (pharmacies && pharmacies.length > 0) {
@@ -42,6 +43,9 @@ const StartCallingScreen = ({ route, navigation }) => {
     } else {
       Alert.alert('No Pharmacies', 'No pharmacies to call');
     }
+      //  Navigate to CallProgressScreen
+       navigation.navigate('CallProgressScreen', { pharmacies, medication, currentIndex: 0 });
+
   };
 
   return (

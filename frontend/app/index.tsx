@@ -9,6 +9,7 @@ import FindingPharmaciesScreen from '../screens/FindingPharmaciesScreen';
 import NoResultsScreen from '../screens/NoResultsScreen';
 import ResultsScreen from '../screens/ResultsScreen';
 import StartCallingScreen from '../screens/StartCallingScreen';
+import CallProgressScreen from '../screens/CallProgressScreen';
 
 const Stack = createStackNavigator();
 
@@ -23,6 +24,7 @@ export default function App() {
         <Stack.Screen name="NoResults" component={NoResultsScreen} />
         <Stack.Screen name="Results" component={ResultsScreen} />
         <Stack.Screen name="StartCalling" component={StartCallingScreen} />
+        <Stack.Screen name="CallProgressScreen" component={CallProgressScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
