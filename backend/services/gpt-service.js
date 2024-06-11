@@ -67,7 +67,7 @@ class GptService extends EventEmitter {
           console.log(endCallResult);
           const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n'); // Generate full transcript
           this.emit('fullTranscript', fullTranscript); // Emit full transcript
-          console.log(`Full transcript emitted: ${fullTranscript}`.green); // Log full transcript
+         // console.log(`Full transcript emitted: ${fullTranscript}`.green); // Log full transcript
         }, 6000);  // Add a 6-second delay before ending the call
       }
       

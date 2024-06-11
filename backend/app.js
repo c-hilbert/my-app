@@ -126,20 +126,12 @@ app.ws('/connection', (ws) => {
 
         // **Listen for full transcript and process it**
         gptService.on('fullTranscript', async (fullTranscript) => {
-          console.log('Received full transcript:'.blue, fullTranscript);
-    
-          // Clean the transcript
-          const cleanedTranscript = cleanTranscript(fullTranscript);
-          console.log('Cleaned Transcript:'.bgMagenta, cleanedTranscript);
-    
-          // // Process the cleaned transcript
-          // const medication = 'adderall'; // Use the actual medication queried
-          // const dosage = '20mg'; // Use the actual dosage queried
-          // const processResult = await processTranscript(cleanedTranscript, medication, dosage);
-    
-          // console.log('Process result:', processResult);
-          // // TODO: Update the database with the result
+          console.log(`Received full transcript: ${fullTranscript}`.bgMagenta);
+          const result = await processTranscript(fullTranscript, '10mg IR');
+          console.log(`Processed Transcript Result: ${result}`);
         });
+
+        
   } catch (err) {
     console.log(err);
   }

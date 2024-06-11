@@ -8,6 +8,7 @@ async function sendTranscriptToChatGPT(transcript, originalDose) {
     const openai = new OpenAI(process.env.OPENAI_API_KEY); // *Instantiate OpenAI client*
 
     console.log('openaI api key:', process.env.OPENAI_API_KEY);
+    console.log('sending transcript to chatgpt');
     const prompt = `
     Extract medication availability from the following conversation. The original dose inquired about is "${originalDose}". The output should be in JSON format with "available" as true or false, "specific_dose_unavailable" as a list of doses that are not available (if any), and "more_info_needed" as true or false.
 
@@ -60,11 +61,8 @@ function cleanTranscript(transcript) {
     return filteredLines.join('\n');
   }
   
-  module.exports = {
-    cleanTranscript,
-  };
-
 async function processTranscript(transcript, originalDose) {
+    console.log('processing transcript with '.blue,  originalDose);
     const cleanedTranscript = cleanTranscript(transcript);
     const result = await sendTranscriptToChatGPT(cleanedTranscript, originalDose);
     return result;
