@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Title from '../components/Title';
@@ -24,7 +23,7 @@ const extractStreetName = (address) => {
 };
 
 const CallProgressScreen = ({ route, navigation }) => {
-  const { pharmacies, medication, currentIndex } = route.params;
+  const { pharmacies, medication, dosage, currentIndex } = route.params;
 
   const [currentPharmacyIndex, setCurrentPharmacyIndex] = useState(currentIndex);
   const [callStatus, setCallStatus] = useState(null); // Ensure setCallStatus is defined
@@ -33,10 +32,34 @@ const CallProgressScreen = ({ route, navigation }) => {
   console.log('CallProgressScreen rendered'); // Add this log
 
   const handleStop = async () => {
-
-       navigation.goBack();
-
+    navigation.goBack();
   };
+
+  const initiateNextCall = (index) => {
+    const pharmacy = pharmacies[index];
+    console.log('Initiating call to next pharmacy:', pharmacy.pharmacy.name);
+    // Make the API call to initiate the next call
+    fetch(`https://${SERVER}/call/initiate-call`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phoneNumber: '+15125170223',
+        placeId: pharmacy.pharmacy.place_id,
+        medication: medication,
+        dosage: dosage // or whatever dosage is relevant
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Server response:', data);
+    })
+    .catch(error => {
+      console.error('Error initiating next call:', error);
+    });
+  };
+
   useEffect(() => {
     console.log('useEffect triggered');
     console.log('SERVER', SERVER);
@@ -57,30 +80,24 @@ const CallProgressScreen = ({ route, navigation }) => {
       if (status.result && status.result.available) {
         Alert.alert('Medication Found!', `The medication is available at ${pharmacies[currentPharmacyIndex].pharmacy.name}`);
       } else if (status.result && !status.result.available) {
+        // Move to the next pharmacy if available status is false
         setCurrentPharmacyIndex(prevIndex => {
           const nextIndex = prevIndex + 1;
           if (nextIndex < pharmacies.length) {
+            // Re-render the screen with the next pharmacy and initiate the next call
+            initiateNextCall(nextIndex);
             return nextIndex;
           } else {
             Alert.alert('No more pharmacies', 'None of the pharmacies have the medication.');
-            return prevIndex;
+            return prevIndex; // No more pharmacies to check
           }
         });
       }
     });
 
     eventSource.addEventListener("error", (event) => {
-      if (event.type === "error") {
-        console.error("Connection error:", event.message);
-      } else if (event.type === "exception") {
-        console.error("Error:", event.message, event.error);
-      }
-      console.log('EventSource readyState on error:', eventSource.readyState);
+      console.error("EventSource failed:", event);
       eventSource.close();
-    });
-
-    eventSource.addEventListener("close", (event) => {
-      console.log("Close SSE connection.");
     });
 
     return () => eventSource.close();
@@ -113,7 +130,6 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: 'center',
     marginVertical: 30, // Adjust spacing between subtitles
-
   },
   buttonContainer: {
     marginTop: 20, // Adjust as needed for spacing
@@ -121,9 +137,3 @@ const styles = StyleSheet.create({
 });
 
 export default CallProgressScreen;
-
-
-
-
-
-
