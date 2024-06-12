@@ -1,10 +1,7 @@
 require('dotenv').config(); // Load environment variables from .env file
 const { OpenAI } = require('openai'); // *Import OpenAI module*
-const { updateCallStatus } = require('../app'); // Ensure the path is correct
-
+const pharmacyModel = require('../models/pharmacyModel'); // Add this line to import pharmacyModel
 const axios = require('axios');
-const pharmacyModel = require('../models/pharmacyModel');
-
 
 
 async function sendTranscriptToChatGPT(transcript, originalDose) {
@@ -66,28 +63,29 @@ function cleanTranscript(transcript) {
     return filteredLines.join('\n');
   }
   
-  async function processTranscript(transcript, originalDose, pharmacyId, medicationType) {
+  async function processTranscript(transcript, dosage, placeId, medication) {
     const cleanedTranscript = cleanTranscript(transcript);
-    const result = await sendTranscriptToChatGPT(cleanedTranscript, originalDose);
+    const result = await sendTranscriptToChatGPT(cleanedTranscript, dosage);
     console.log('Processed Transcript Result from processTranscript function:', result);
     console.log('result.available:', result.available);
 
+
     if (result.available) {
-        await pharmacyModel.updateAllDosagesAvailable(pharmacyId, medicationType);
+        await pharmacyModel.updateAllDosagesAvailable(placeId, medication);
     } else if (!result.available && result.more_info_needed) {
-        await pharmacyModel.updateSpecificDosageToNo(pharmacyId, medicationType, originalDose);
+        await pharmacyModel.updateSpecificDosageToNo(placeId, medication, dosage);
     } else {
-        await pharmacyModel.updateAllDosagesUnavailable(pharmacyId, medicationType);
+        await pharmacyModel.updateAllDosagesUnavailable(placeId, medication);
     }
     
     // You can also record the call if necessary
     //await pharmacyModel.recordCall(pharmacyId, medicationId, cleanedTranscript, result);
-    
-    // Send update to frontend
-    updateCallStatus({ status: 'processed', result });
+
 
     return result;
 }
+
+
 
 module.exports = {
   sendTranscriptToChatGPT,

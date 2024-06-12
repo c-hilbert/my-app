@@ -1,19 +1,20 @@
 const { updateAllDosagesAvailable, updateAllDosagesUnavailable, updateSpecificDosageToNo } = require('../models/pharmacyModel');
 const db = require('../config/db');
 
-async function testUpdateAllDosagesAvailable() {
-  // Reset the table for a clean start
-  await db.execute(`TRUNCATE TABLE pharmacy_medications`);
-
-  // Insert test data
+async function updateTestData(placeId, medicationId, available, moreInfoNeeded) {
   await db.execute(`
-    INSERT INTO pharmacy_medications (pharmacy_id, medication_id, available, more_info_needed) 
-    VALUES 
-    ('pharmacy_1', 1, NULL, 1),
-    ('pharmacy_1', 2, NULL, 1),
-    ('pharmacy_1', 3, NULL, 1),
-    ('pharmacy_1', 4, NULL, 1)
-  `);
+    UPDATE pharmacy_medications 
+    SET available = ?, more_info_needed = ?
+    WHERE place_id = ? AND medication_id = ?
+  `, [available, moreInfoNeeded, placeId, medicationId]);
+}
+
+async function testUpdateAllDosagesAvailable() {
+  // Update test data
+  await updateTestData('pharmacy_1', 1, null, 1);
+  await updateTestData('pharmacy_1', 2, null, 1);
+  await updateTestData('pharmacy_1', 3, null, 1);
+  await updateTestData('pharmacy_1', 4, null, 1);
 
   // Call the function to test
   await updateAllDosagesAvailable('pharmacy_1', 'Adderall');
@@ -23,13 +24,19 @@ async function testUpdateAllDosagesAvailable() {
     SELECT m.type, m.dosage, pm.available, pm.last_inquired 
     FROM pharmacy_medications pm 
     JOIN medications m ON pm.medication_id = m.id 
-    WHERE pm.pharmacy_id = ? AND m.type = ?
+    WHERE pm.place_id = ? AND m.type = ?
   `, ['pharmacy_1', 'Adderall']);
 
   console.log('After updating all dosages to "yes":', rows);
 }
 
 async function testUpdateAllDosagesUnavailable() {
+  // Update test data
+  await updateTestData('pharmacy_1', 1, 1, 0);
+  await updateTestData('pharmacy_1', 2, 1, 0);
+  await updateTestData('pharmacy_1', 3, 1, 0);
+  await updateTestData('pharmacy_1', 4, 1, 0);
+
   // Call the function to test
   await updateAllDosagesUnavailable('pharmacy_1', 'Adderall');
 
@@ -38,13 +45,19 @@ async function testUpdateAllDosagesUnavailable() {
     SELECT m.type, m.dosage, pm.available, pm.last_inquired 
     FROM pharmacy_medications pm 
     JOIN medications m ON pm.medication_id = m.id 
-    WHERE pm.pharmacy_id = ? AND m.type = ?
+    WHERE pm.place_id = ? AND m.type = ?
   `, ['pharmacy_1', 'Adderall']);
 
   console.log('After updating all dosages to "no":', rows);
 }
 
 async function testUpdateSpecificDosageToNo() {
+  // Update test data
+  await updateTestData('pharmacy_1', 1, 1, 0);
+  await updateTestData('pharmacy_1', 2, 1, 0);
+  await updateTestData('pharmacy_1', 3, 1, 0);
+  await updateTestData('pharmacy_1', 4, 1, 0);
+
   // Call the function to test
   await updateSpecificDosageToNo('pharmacy_1', 'Adderall', '10mg IR');
 
@@ -53,7 +66,7 @@ async function testUpdateSpecificDosageToNo() {
     SELECT m.type, m.dosage, pm.available, pm.last_inquired 
     FROM pharmacy_medications pm 
     JOIN medications m ON pm.medication_id = m.id 
-    WHERE pm.pharmacy_id = ? AND m.type = ?
+    WHERE pm.place_id = ? AND m.type = ?
   `, ['pharmacy_1', 'Adderall']);
 
   console.log('After updating specific dosage to "no":', rows);
@@ -72,3 +85,4 @@ async function runTests() {
 }
 
 runTests();
+

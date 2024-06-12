@@ -66,23 +66,18 @@ app.get('/events', (req, res) => {
   });
 });
 
-// Function to send updates to all connected clients
-function updateCallStatus(status) {
+
+module.exports = router;
+
+function updateCallStatus(status, result) {
+  const data = { status, result }; // Combine status and result into a single object
+  console.log('update call status was called');
   clients.forEach(client => {
-      client.res.write(`data: ${JSON.stringify(status)}\n\n`);
+    console.log(`Sending status to client: ${JSON.stringify(data)}`);
+    client.res.write(`data: ${JSON.stringify(data)}\n\n`);
   });
 }
 
-// router.post('/initiate-call', async (req, res) => {
-//   try {
-//     await makeOutboundCall();
-//     res.status(200).send('Call initiated successfully');
-//   } catch (error) {
-//     res.status(500).send('Failed to initiate call');
-//   }
-// });
-
-module.exports = router;
 
 app.ws('/connection', (ws) => {
   try {
@@ -155,11 +150,13 @@ app.ws('/connection', (ws) => {
       marks.push(markLabel);
     });
 
-        // **Listen for full transcript and process it**
-        gptService.on('fullTranscript', async (fullTranscript) => {
-          console.log(`Received full transcript: ${fullTranscript}`.bgMagenta);
-          const result = await processTranscript(fullTranscript, '10mg IR');
+
+    gptService.on('fullTranscript', async (fullTranscript, placeId, dosage, medication) => {
+          console.log(`Received full transcript with pharmacyId=${placeId} and dosage=${dosage} and medication= ${medication}`); // Add this log
+          const result = await processTranscript(fullTranscript, dosage, placeId, medication);
           console.log(`Processed Transcript Result: ${result}`);
+          updateCallStatus({ status: 'processed', result }); // Ensure this call
+
         });
 
         
@@ -172,8 +169,3 @@ app.ws('/connection', (ws) => {
 
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
-
-
-module.exports = {
-  updateCallStatus,
-};

@@ -13,7 +13,19 @@ class GptService extends EventEmitter {
       { 'role': 'assistant', 'content': 'Hi! I was just calling to see if you have adderall in stock?' },
     ],
     this.partialResponseIndex = 0;
+    this.placeId = null; // Store pharmacyId
+    this.medication = null; // Store medication
+    this.dosage = null; // Store dosage
+
   }
+
+ setPharmacyDetails(placeId, medication, dosage) {
+    console.log(`Setting placeId=${placeId}, medication=${medication}, dosage=${dosage}`); // Add this log
+    this.placeId = placeId;
+    this.medication = medication;
+    this.dosage = dosage;
+  }
+
 
   setCallSid(callSid) {
     this.userContext.push({ 'role': 'system', 'content': `callSid: ${callSid}` });
@@ -66,7 +78,13 @@ class GptService extends EventEmitter {
           const endCallResult = await endCall({ callSid });
           console.log(endCallResult);
           const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n'); // Generate full transcript
-          this.emit('fullTranscript', fullTranscript); // Emit full transcript
+         
+          const placeId = this.placeId; // Get pharmacyId
+          const medication = this.medication; // Get medication
+          const dosage = this.dosage; // Get dosage
+          this.emit('fullTranscript', fullTranscript, placeId, medication, dosage); // Emit full transcript with params
+   
+
          // console.log(`Full transcript emitted: ${fullTranscript}`.green); // Log full transcript
         }, 6000);  // Add a 6-second delay before ending the call
       }

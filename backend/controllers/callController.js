@@ -2,10 +2,15 @@
 
 require('dotenv').config();
 const twilio = require('twilio');
+const { GptService } = require('../services/gpt-service'); // Ensure the correct path
+const gptService = new GptService(); // Instantiate GptService
 
 async function makeOutBoundCall(req, res) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const { placeId, medication, dosage } = req.body; // Receive pharmacyId and eventually phone Number
+  console.log(`makeOutBoundCall called with pharmacyId=${placeId}, medication=${medication}}, dosage=${dosage}`, ); // Add this log
+
   
   const client = twilio(accountSid, authToken);
 
@@ -23,9 +28,14 @@ async function makeOutBoundCall(req, res) {
     const call = await client.calls.create({
       url: `https://${server}/incoming`,
       to: yourNumber,
-      from: fromNumber
+      from: fromNumber,
     });
+
     console.log('Call.sid', call.sid);
+
+    // Directly store pharmacyId for further use
+    gptService.setPharmacyDetails(placeId, medication, dosage);
+
     res.status(200).json({ success: true }); // Ensure the response is JSON
   } catch (error) {
     console.error('Error initiating call:', error);

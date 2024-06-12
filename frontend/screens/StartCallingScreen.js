@@ -12,26 +12,32 @@ import { SERVER } from '@env'; // Update import statement
 import CustomButton from '../components/CustomButton';
 
 const StartCallingScreen = ({ route, navigation }) => {
-  const { pharmacies, medication } = route.params;
+  const { pharmacies, medication, dosage } = route.params;
   console.log('pharmacies:', pharmacies)
 
   const handleStartCall = async () => {
     if (pharmacies && pharmacies.length > 0) {
       try {
         const pharmacy = pharmacies[0];
+        console.log('passing pharmacy id to server:', pharmacy.pharmacy.place_id, 'along with medication', medication, 'and dosage', dosage);
         const response = await fetch(`https://${SERVER}/call/initiate-call`, { // Replace with your server address
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ phoneNumber: '+15125170223'}),
+          body: JSON.stringify({ 
+            phoneNumber: '+15125170223',
+            placeId: pharmacy.pharmacy.place_id,  // Include pharmacyId
+            medication: medication, //include medication type
+            dosage: dosage
+          }),
         });
 
         const data = await response.json();
         console.log('Server response:', data); // Log the server response
 
         if (data.success) {
-          Alert.alert('Call Initiated')
+          console.log('Call Initiated');
         } else {
           console.error('Error initiating call:', error);
           Alert.alert('Error', 'Failed to initiate call');

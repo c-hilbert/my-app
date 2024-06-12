@@ -27,6 +27,9 @@ const CallProgressScreen = ({ route, navigation }) => {
   const { pharmacies, medication, currentIndex } = route.params;
 
   const [currentPharmacyIndex, setCurrentPharmacyIndex] = useState(currentIndex);
+  const [callStatus, setCallStatus] = useState(null); // Ensure setCallStatus is defined
+
+
   console.log('CallProgressScreen rendered'); // Add this log
 
   const handleStop = async () => {
@@ -35,31 +38,50 @@ const CallProgressScreen = ({ route, navigation }) => {
 
   };
   useEffect(() => {
-    console.log('useEffect triggered'); // Add this log
+    console.log('useEffect triggered');
     console.log('SERVER', SERVER);
-    const eventSource = new EventSource(`https://${SERVER}/events`);
-    console.log('EventSource created:', eventSource); // Add this log
-  
-    eventSource.onopen = () => {
-      console.log('EventSource connection opened.');
-    };
 
-    eventSource.onmessage = (event) => {
-      const status = JSON.parse(event.data);
-      console.log('Call Status:', status);
+    const eventSource = new EventSource(`https://${SERVER}/events`);
+    console.log('EventSource created with URL:', `https://${SERVER}/events`);
+
+    eventSource.addEventListener("open", (event) => {
+      console.log("Open SSE connection.");
+    });
+
+    eventSource.addEventListener("message", (event) => {
+      console.log('Event received:', event);
+      const data = JSON.parse(event.data);
+      console.log('Call Status:', data);
+      const status = data.status;  // Correct the status object
       setCallStatus(status.status);
       if (status.result && status.result.available) {
         Alert.alert('Medication Found!', `The medication is available at ${pharmacies[currentPharmacyIndex].pharmacy.name}`);
       } else if (status.result && !status.result.available) {
-        // Move to the next pharmacy
-        setCurrentPharmacyIndex(prevIndex => (prevIndex + 1) % pharmacies.length);
+        setCurrentPharmacyIndex(prevIndex => {
+          const nextIndex = prevIndex + 1;
+          if (nextIndex < pharmacies.length) {
+            return nextIndex;
+          } else {
+            Alert.alert('No more pharmacies', 'None of the pharmacies have the medication.');
+            return prevIndex;
+          }
+        });
       }
-    };
+    });
 
-    eventSource.onerror = (err) => {
-      console.error('EventSource failed:', err);
+    eventSource.addEventListener("error", (event) => {
+      if (event.type === "error") {
+        console.error("Connection error:", event.message);
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error);
+      }
+      console.log('EventSource readyState on error:', eventSource.readyState);
       eventSource.close();
-    };
+    });
+
+    eventSource.addEventListener("close", (event) => {
+      console.log("Close SSE connection.");
+    });
 
     return () => eventSource.close();
   }, [currentPharmacyIndex, pharmacies]);
@@ -105,54 +127,3 @@ export default CallProgressScreen;
 
 
 
-// import React from 'react';
-// import { View, StyleSheet } from 'react-native';
-// import TopLogo from '../components/TopLogo';
-// import Screen from '../components/Screen';
-// import Subtitle from '../components/Subtitle';
-// import Text from '../components/Text'; // Assuming Text is a custom component for styled text
-// import CustomButton from '../components/CustomButton';
-
-// const CallProgressScreen = ({ route, navigation }) => {
-//   const { medication } = route.params;
-
-//   const handleStop = () => {
-//     // Handle the stop action, e.g., navigate back or cancel the process
-//     navigation.goBack();
-//   };
-
-//   return (
-//     <Screen>
-//       <View style={styles.container}>
-//         <TopLogo />
-//         <Text text="Calling ________." />
-//         <Subtitle text="This might take a while! We'll wait on hold for you and get the information you need :) In the meantime, feel free to exit the app, or check back here for updates. You'll get a push notification when we're done." />
-//         <View style={styles.buttonContainer}>
-//           <CustomButton label="Stop" onPress={handleStop} />
-//         </View>
-//       </View>
-//     </Screen>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'flex-start',
-//     alignItems: 'center',
-//     paddingHorizontal: 20,
-//   },
-//   subtitle: {
-//     textAlign: 'center',
-//     marginVertical: 30, // Adjust spacing between subtitles
-//   },
-//   buttonContainer: {
-//     marginTop: 20, // Adjust as needed for spacing
-//   },
-//   text: {
-//     textAlign: 'center',
-//     marginVertical: 20,
-//   },
-// });
-
-// export default CallProgressScreen;
