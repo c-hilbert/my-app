@@ -23,12 +23,15 @@ async function makeOutBoundCall(req, res) {
   console.log('SERVER:', server);
   console.log('YOUR_NUMBER:', yourNumber);
   console.log('FROM_NUMBER:', fromNumber);
+  
 
   try {
     const call = await client.calls.create({
       url: `https://${server}/incoming`,
       to: yourNumber,
       from: fromNumber,
+      record: true, // Enable call recording
+      recordingStatusCallback: `https://${server}/recording-status`, // Add a callback URL
     });
 
     console.log('Call.sid', call.sid);

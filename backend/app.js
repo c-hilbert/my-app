@@ -28,9 +28,13 @@ app.use(express.json());
 // Integrate the new routes
 const searchRouter = require('./routes/searchRoutes');
 const callRouter = require('./routes/callRoutes');
+const recordingRoutes = require('./routes/recordingRoutes');
+
 
 app.use('/search', searchRouter);
 app.use('/call', callRouter);
+app.use('/recordings', recordingRoutes);
+
 
 app.post('/incoming', (req, res) => {
   res.status(200);
