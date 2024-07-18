@@ -9,20 +9,10 @@ describe('GptService', () => {
     gptService = new GptService();
   });
 
-  test('should complete a prompt and potentially emit DTMF', (done) => {
-    console.log('Starting test');
-    const prompt = "You've reached an automated system. For pharmacy, press 1.";
+  test('should complete a regular chat prompt', (done) => {
+    console.log('Starting regular chat test');
+    const prompt = "Hello, how are you?";
     
-    let gptReplyReceived = false;
-    let dtmfReceived = false;
-
-    function checkTestCompletion() {
-      if (gptReplyReceived && (dtmfReceived || gptReplyReceived)) {
-        // Wait a bit before calling done to allow for any final async operations
-        setTimeout(done, 100);
-      }
-    }
-
     gptService.on('gptreply', (reply) => {
       console.log('Received gptreply event');
       try {
@@ -30,28 +20,32 @@ describe('GptService', () => {
         expect(reply.partialResponse).toBeTruthy();
         expect(typeof reply.partialResponse).toBe('string');
         console.log('Response:', reply.partialResponse);
-        gptReplyReceived = true;
-        checkTestCompletion();
+        done();
       } catch (error) {
         done(error);
       }
     });
 
-    gptService.on('dtmf', (tone) => {
-      console.log('Received dtmf event');
-      try {
-        expect(tone).toBeTruthy();
-        expect(typeof tone).toBe('string');
-        expect(tone).toMatch(/^\d+$/);  // Ensure it's a string of digits
-        console.log('DTMF tone:', tone);
-        dtmfReceived = true;
-        checkTestCompletion();
-      } catch (error) {
-        done(error);
-      }
-    });
-
-    console.log('Calling completion method');
+    console.log('Calling completion method for regular chat');
     gptService.completion(prompt, 0);
-  }, 30000); // 30 second timeout
+  }, 30000);
+
+  test('should include DTMF instructions in response when appropriate', (done) => {
+    console.log('Starting DTMF test');
+    const prompt = "You've reached an automated system. For pharmacy, press 1.";
+    
+    gptService.on('gptreply', (reply) => {
+      console.log('Received gptreply event in DTMF test');
+      try {
+        console.log('DTMF test response:', reply.partialResponse);
+        expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    console.log('Calling completion method for DTMF test');
+    gptService.completion(prompt, 0);
+  }, 30000);
 });
