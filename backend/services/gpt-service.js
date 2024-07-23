@@ -55,9 +55,11 @@ class GptService extends EventEmitter {
   }
 
   async completion(text, interactionCount, role = 'user', name = 'user') {
+    console.log('Entering completion method');
     this.updateUserContext(name, role, text);
 
     const stream = await this.openai.chat.completions.create({
+
       model: 'gpt-4-1106-preview',
       messages: this.userContext,
       stream: true,

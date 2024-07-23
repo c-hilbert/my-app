@@ -55,6 +55,17 @@ class StreamService extends EventEmitter {
     );
     this.emit('audiosent', markLabel);
   }
+
+  sendDTMF(digit) {
+    this.ws.send(
+      JSON.stringify({
+        streamSid: this.streamSid,
+        event: 'dtmf',
+        dtmf: digit
+      })
+    );
+    console.log(`Sent DTMF: ${digit}`);
+  }
 }
 
 module.exports = {StreamService};
