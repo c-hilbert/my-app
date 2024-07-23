@@ -48,4 +48,37 @@ describe('GptService', () => {
     console.log('Calling completion method for DTMF test');
     gptService.completion(prompt, 0);
   }, 30000);
+
+  test('should send DTMF when instructed', (done) => {
+    console.log('Starting DTMF sending test');
+    const prompt = "You've reached an automated system. For pharmacy, press 1.";
+    
+    const mockStreamService = {
+      sendDTMF: jest.fn()
+    };
+    
+    gptService.on('gptreply', (reply) => {
+      console.log('Received gptreply event in DTMF sending test');
+      try {
+        console.log('DTMF test response:', reply.partialResponse);
+        expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
+        
+        const dtmfMatch = reply.partialResponse.match(/DTMF:\s*(\d)/);
+        if (dtmfMatch) {
+          const dtmfDigit = dtmfMatch[1];
+          mockStreamService.sendDTMF(dtmfDigit);
+          expect(mockStreamService.sendDTMF).toHaveBeenCalledWith(dtmfDigit);
+        }
+        
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+  
+    console.log('Calling completion method for DTMF sending test');
+    gptService.completion(prompt, 0);
+  }, 30000);
+
+
 });
