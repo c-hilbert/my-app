@@ -97,7 +97,7 @@ app.ws('/connection', (ws) => {
   
     let marks = [];
     let interactionCount = 0;
-    let isFirstInteraction = true;  // Add this flag
+    let isFirstUtterance = true; // Add this flag
 
   
     // Incoming from MediaStream
@@ -107,6 +107,8 @@ app.ws('/connection', (ws) => {
         streamSid = msg.start.streamSid;
         callSid = msg.start.callSid;
         streamService.setStreamSid(streamSid);
+        streamService.setCallSid(callSid);  // Add this line
+
         gptService.setCallSid(callSid);
         console.log(`Twilio -> Starting Media Stream for ${streamSid}`.underline.red);
        
@@ -139,13 +141,12 @@ app.ws('/connection', (ws) => {
       if (!text) { return; }
       console.log(`Interaction ${interactionCount} – STT -> GPT: ${text}`.yellow);
     
-      if (isFirstInteraction) {
-        isFirstInteraction = false;
-        // For the first interaction, just update the context without generating a response
-        gptService.updateUserContext('user', 'user', text);
-      } else {
-        // For subsequent interactions, proceed with normal flow
+      if (isFirstUtterance) {
+        isFirstUtterance = false;
         await gptService.completion(text, interactionCount);
+      } else {
+        await gptService.completion(text, interactionCount);
+      
       }
       
       interactionCount += 1;
@@ -153,12 +154,6 @@ app.ws('/connection', (ws) => {
     
     gptService.on('gptreply', async (gptReply, icount) => {
       console.log(`Interaction ${icount}: GPT -> TTS: ${gptReply.partialResponse}`.green );
-       // Check for DTMF instruction
-  const dtmfMatch = gptReply.partialResponse.match(/DTMF:\s*(\d)/);
-  if (dtmfMatch) {
-    const dtmfDigit = dtmfMatch[1];
-    streamService.sendDTMF(dtmfDigit);
-  }
       
       ttsService.generate(gptReply, icount);
     });

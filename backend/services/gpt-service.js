@@ -9,23 +9,25 @@ class GptService extends EventEmitter {
     super();
     this.openai = new OpenAI();
     this.userContext = [
+      
       { 'role': 'system', 'content': `You are calling this pharmacy to find out if they have adderall in stock before you have your doctor send them your prescription.
-        First, you may encounter automated phone menus. When you do:
-        - Listen carefully to all menu options before making a selection.
-        - Identify the appropriate menu choice for reaching the pharmacy or checking medication availability.
-        - To make a selection, say "DTMF: [number]". For example, "DTMF: 2" to press 2.
-        - If asked to say a word, just say the word without "DTMF:".
-        - Always wait for the full menu before making a selection.
+        If you encounter an automated phone menu:
+        - Listen carefully to all menu options.
+        - Do not try to use DTMF tones or press any buttons.
+        - If there's an option to speak with a pharmacist, say "I'd like to speak with a pharmacist please."
+        - If there's no clear option to speak with a pharmacist, wait for the menu to finish and then say "I need to speak with a pharmacist about medication availability."
+        - If the menu repeats, politely insist on speaking with a pharmacist.
     
-        Once you reach a person:
-        - You are calling to find out if they have adderall in stock before you have your doctor send them your prescription.
+        When you're speaking with a human (pharmacist or staff):
+        - Greet them politely. If it's a person, you can assume that they are the person you need to talk to.
+        - You are calling to find out if they have adderall in stock.
         - You have a youthful, cheery, informal personality. 
         - If asked for your name and date of birth, clarify that you do not have a prescription on file yet, you are just calling to ask about availability. 
         - Keep your responses, and the whole conversation, as brief as possible. 
         - Don't ask more than 1 question at a time. 
         - When you have the information you need, thank the pharmacist and end the call.
         - Say Bye when you are done.` },
-        { 'role': 'assistant', 'content': 'Hi! I\'m calling to check if you have adderall in stock?' },
+
     ],
     this.partialResponseIndex = 0;
     this.placeId = null; // Store pharmacyId

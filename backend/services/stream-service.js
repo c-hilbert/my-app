@@ -1,4 +1,6 @@
 const EventEmitter = require('events');
+const twilio = require('twilio');
+
 const uuid = require('uuid');
 
 class StreamService extends EventEmitter {
@@ -8,10 +10,16 @@ class StreamService extends EventEmitter {
     this.expectedAudioIndex = 0;
     this.audioBuffer = {};
     this.streamSid = '';
+    this.callSid = '';
+    this.twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   }
 
   setStreamSid (streamSid) {
     this.streamSid = streamSid;
+  }
+
+  setCallSid(callSid) {
+    this.callSid = callSid;
   }
 
   buffer (index, audio) {
@@ -56,16 +64,16 @@ class StreamService extends EventEmitter {
     this.emit('audiosent', markLabel);
   }
 
-  sendDTMF(digit) {
-    this.ws.send(
-      JSON.stringify({
-        streamSid: this.streamSid,
-        event: 'dtmf',
-        dtmf: digit
-      })
-    );
-    console.log(`Sent DTMF: ${digit}`);
+  async sendDTMF(digit) {
+    try {
+      await this.twilioClient.calls(this.callSid)
+        .update({sendDigits: digit});
+      console.log(`Sent DTMF: ${digit} using Twilio REST API`);
+    } catch (error) {
+      console.error('Error sending DTMF:', error);
+    }
   }
+
 }
 
 module.exports = {StreamService};
