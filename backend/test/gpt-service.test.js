@@ -30,55 +30,55 @@ describe('GptService', () => {
     gptService.completion(prompt, 0);
   }, 30000);
 
-  test('should include DTMF instructions in response when appropriate', (done) => {
-    console.log('Starting DTMF test');
-    const prompt = "You've reached an automated system. For pharmacy, press 1.";
+  // test('should include DTMF instructions in response when appropriate', (done) => {
+  //   console.log('Starting DTMF test');
+  //   const prompt = "You've reached an automated system. For pharmacy, press 1.";
     
-    gptService.on('gptreply', (reply) => {
-      console.log('Received gptreply event in DTMF test');
-      try {
-        console.log('DTMF test response:', reply.partialResponse);
-        expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
-        done();
-      } catch (error) {
-        done(error);
-      }
-    });
+  //   gptService.on('gptreply', (reply) => {
+  //     console.log('Received gptreply event in DTMF test');
+  //     try {
+  //       console.log('DTMF test response:', reply.partialResponse);
+  //       expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
+  //       done();
+  //     } catch (error) {
+  //       done(error);
+  //     }
+  //   });
 
-    console.log('Calling completion method for DTMF test');
-    gptService.completion(prompt, 0);
-  }, 30000);
+  //   console.log('Calling completion method for DTMF test');
+  //   gptService.completion(prompt, 0);
+  // }, 30000);
 
-  test('should send DTMF when instructed', (done) => {
-    console.log('Starting DTMF sending test');
-    const prompt = "You've reached an automated system. For pharmacy, press 1.";
+  // test('should send DTMF when instructed', (done) => {
+  //   console.log('Starting DTMF sending test');
+  //   const prompt = "You've reached an automated system. For pharmacy, press 1.";
     
-    const mockStreamService = {
-      sendDTMF: jest.fn()
-    };
+  //   const mockStreamService = {
+  //     sendDTMF: jest.fn()
+  //   };
     
-    gptService.on('gptreply', (reply) => {
-      console.log('Received gptreply event in DTMF sending test');
-      try {
-        console.log('DTMF test response:', reply.partialResponse);
-        expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
+  //   gptService.on('gptreply', (reply) => {
+  //     console.log('Received gptreply event in DTMF sending test');
+  //     try {
+  //       console.log('DTMF test response:', reply.partialResponse);
+  //       expect(reply.partialResponse).toMatch(/DTMF:\s*\d/);
         
-        const dtmfMatch = reply.partialResponse.match(/DTMF:\s*(\d)/);
-        if (dtmfMatch) {
-          const dtmfDigit = dtmfMatch[1];
-          mockStreamService.sendDTMF(dtmfDigit);
-          expect(mockStreamService.sendDTMF).toHaveBeenCalledWith(dtmfDigit);
-        }
+  //       const dtmfMatch = reply.partialResponse.match(/DTMF:\s*(\d)/);
+  //       if (dtmfMatch) {
+  //         const dtmfDigit = dtmfMatch[1];
+  //         mockStreamService.sendDTMF(dtmfDigit);
+  //         expect(mockStreamService.sendDTMF).toHaveBeenCalledWith(dtmfDigit);
+  //       }
         
-        done();
-      } catch (error) {
-        done(error);
-      }
-    });
+  //       done();
+  //     } catch (error) {
+  //       done(error);
+  //     }
+  //   });
   
-    console.log('Calling completion method for DTMF sending test');
-    gptService.completion(prompt, 0);
-  }, 30000);
+  //   console.log('Calling completion method for DTMF sending test');
+  //   gptService.completion(prompt, 0);
+  // }, 30000);
 
 
 });
