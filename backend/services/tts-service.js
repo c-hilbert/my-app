@@ -16,31 +16,32 @@ class TextToSpeechService extends EventEmitter {
 
     try {
       const response = await fetch(
-        `https://api.deepgram.com/v1/speak?model=${process.env.VOICE_MODEL}&encoding=mulaw&sample_rate=8000&container=none`,
+        `https://api.elevenlabs.io/v1/text-to-speech/${process.env.VOICE_ID}/stream?output_format=ulaw_8000&optimize_streaming_latency=3`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`,
+            'xi-api-key': process.env.XI_API_KEY,
             'Content-Type': 'application/json',
+            'accept': 'audio/wav',
           },
           body: JSON.stringify({
+            model_id: process.env.XI_MODEL_ID,
             text: partialResponse,
           }),
         }
       );
 
       if (response.status === 200) {
-        try {
-          const blob = await response.blob();
-          const audioArrayBuffer = await blob.arrayBuffer();
-          const base64String = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
+       
+        const audioArrayBuffer = await response.arrayBuffer();
+        const base64String = Buffer.from(audioArrayBuffer).toString('base64');
+          // const blob = await response.blob();
+          // const audioArrayBuffer = await blob.arrayBuffer();
+          // const base64String = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
           this.emit('speech', partialResponseIndex, base64String, partialResponse, interactionCount);
-        } catch (err) {
-          console.log(err);
-        }
       } else {
-        console.log('Deepgram TTS error:');
-        console.log(response);
+        console.log('ElevenLabs error:');
+        console.log(await response.text());
       }
     } catch (err) {
       console.error('Error occurred in TextToSpeech service');
