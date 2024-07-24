@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 exports.getMedicationAvailabilityByPharmacyId = async (placeId, medication) => {
   const [rows] = await db.execute(`
-    SELECT m.type, m.dosage, pm.available, pm.last_inquired
+    SELECT m.type, m.dosage, pm.available, pm.last_called
     FROM pharmacy_medications pm
     JOIN medications m ON pm.medication_id = m.id
     WHERE pm.place_id = ? AND m.type = ?
@@ -49,6 +49,15 @@ exports.updateSpecificDosageToNo = async (placeId, medication, dosage) => {
     WHERE pm.place_id = ? AND m.type = ? AND m.dosage != ?
   `, [placeId, medication, dosage]);
 };
+
+exports.updateLastCalledTimestamp = async (placeId, medicationId) => {
+  await db.execute(`
+    UPDATE pharmacy_medications
+    SET last_called = CURRENT_TIMESTAMP
+    WHERE place_id = ? AND medication_id = ?
+  `, [placeId, medicationId]);
+};
+
 
 exports.recordCall = async (placeId, medication, transcript, availabilityResult) => {
   try {

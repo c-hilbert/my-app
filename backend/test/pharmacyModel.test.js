@@ -3,39 +3,73 @@
 const db = require('../config/db');
 const pharmacyModel = require('../models/pharmacyModel');
 
-jest.mock('../config/db', () => ({
-  execute: jest.fn()
-}));
+const TEST_PREFIX = 'TESTDATA_';
+const TEST_PLACE_ID = `${TEST_PREFIX}place_id`;
+const TEST_MEDICATION_ID = 999999;
+const INVALID_PLACE_ID = `${TEST_PREFIX}invalid_place_id`;
+const INVALID_MEDICATION_TYPE = 'Invalid Medication';
+
 
 describe('pharmacyModel', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeAll(async () => {
+    // Set up test data
+    await db.execute(`
+      INSERT IGNORE INTO pharmacies (place_id, name, address, phone_number)
+      VALUES (?, 'Test Pharmacy', 'Test Address', '1234567890')
+    `, [TEST_PLACE_ID]);
+
+    await db.execute(`
+      INSERT IGNORE INTO medications (id, type, dosage)
+      VALUES (?, 'Test Medication', 'Test Dosage')
+    `, [TEST_MEDICATION_ID]);
   });
 
-  test('getMedicationAvailabilityByPharmacyId should return medication details for a valid pharmacyId and medication type', async () => {
-    const pharmacyId = 'pharmacy-1';
-    const medicationType = 'adderall';
-    const mockResult = [
-      { type: 'adderall', dosage: '10mg', available: 'Yes', last_inquired: new Date() },
-      { type: 'adderall', dosage: '20mg', available: 'No', last_inquired: new Date() }
-    ];
+  beforeEach(async () => {
+    // Clear existing test data and insert fresh test records
+    await db.execute('DELETE FROM pharmacy_medications WHERE place_id = ?', [TEST_PLACE_ID]);
+    await db.execute(
+      'INSERT INTO pharmacy_medications (place_id, medication_id, available) VALUES (?, ?, ?)',
+      [TEST_PLACE_ID, TEST_MEDICATION_ID, 1]
+    );
+  });
 
-    db.execute.mockResolvedValue([mockResult]);
+  afterAll(async () => {
+    // Clean up all test data
+    await db.execute('DELETE FROM pharmacy_medications WHERE place_id = ?', [TEST_PLACE_ID]);
+    await db.execute('DELETE FROM pharmacies WHERE place_id = ?', [TEST_PLACE_ID]);
+    await db.execute('DELETE FROM medications WHERE id = ?', [TEST_MEDICATION_ID]);
+    await db.end();
+  });
 
-    const result = await pharmacyModel.getMedicationAvailabilityByPharmacyId(pharmacyId, medicationType);
-
-    expect(result).toEqual(mockResult);
-    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('SELECT m.type, m.dosage, pm.available, pm.last_inquired'), [pharmacyId, medicationType]);
+  test('getMedicationAvailabilityByPharmacyId returns medication details', async () => {
+    const result = await pharmacyModel.getMedicationAvailabilityByPharmacyId(TEST_PLACE_ID, 'Test Medication');
+    expect(result).toBeDefined();
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]).toHaveProperty('type', 'Test Medication');
+    expect(result[0]).toHaveProperty('available', 1);
   });
 
   test('getMedicationAvailabilityByPharmacyId should return undefined for an invalid pharmacyId or medication type', async () => {
-    const pharmacyId = 'invalid-pharmacy';
-    const medicationType = 'invalid-medication';
-    db.execute.mockResolvedValue([[]]);
-
-    const result = await pharmacyModel.getMedicationAvailabilityByPharmacyId(pharmacyId, medicationType);
-
+    // Test with invalid pharmacy ID
+    let result = await pharmacyModel.getMedicationAvailabilityByPharmacyId(INVALID_PLACE_ID, 'Test Medication');
     expect(result).toBeUndefined();
-    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('SELECT m.type, m.dosage, pm.available, pm.last_inquired'), [pharmacyId, medicationType]);
+  
+    // Test with invalid medication type
+    result = await pharmacyModel.getMedicationAvailabilityByPharmacyId(TEST_PLACE_ID, INVALID_MEDICATION_TYPE);
+    expect(result).toBeUndefined();
   });
+
+  test('updateLastCalledTimestamp updates the timestamp', async () => {
+    await pharmacyModel.updateLastCalledTimestamp(TEST_PLACE_ID, TEST_MEDICATION_ID);
+    const [rows] = await db.execute(
+      'SELECT last_called FROM pharmacy_medications WHERE place_id = ? AND medication_id = ?',
+      [TEST_PLACE_ID, TEST_MEDICATION_ID]
+    );
+    expect(rows.length).toBe(1);
+    expect(rows[0].last_called).not.toBeNull();
+    const timeDiff = new Date() - new Date(rows[0].last_called);
+    expect(timeDiff).toBeLessThan(1000); // Should be updated within the last second
+  });
+
+
 });

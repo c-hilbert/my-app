@@ -22,59 +22,6 @@ exports.findNearbyPharmacies = async (req, res) => {
   }
 };
 
-// //const pharmacyModel = require('../models/pharmacyModel');
-// exports.checkMedicationAvailability = async (pharmacies, medicationType, medicationDosage) => {
-//   const pharmacyStatuses = [];
-
-//   for (const pharmacy of pharmacies) {
-//     const pharmacyDetails = await pharmacyModel.getMedicationAvailabilityByPharmacyId(pharmacy.place_id, medicationType);
-
-//     let status = 'Unknown';
-//     if (pharmacyDetails) {
-//       const specificMedication = pharmacyDetails.find(
-//         detail => detail.dosage === medicationDosage
-//       );
-
-//       if (specificMedication) {
-//         if (specificMedication.available === 'Yes') {
-//           // If medication is available, return immediately
-//           return { status: 'Medication Available', pharmacy: {
-//             id: pharmacy.place_id,
-//             name: pharmacy.name,
-//             address: pharmacy.vicinity,
-//             phoneNumber: pharmacy.phoneNumber, // Assuming phone number is available
-//             medications: pharmacyDetails,
-//             status: 'Available'
-//           }};
-//         } else {
-//           status = 'No';
-//         }
-//       }
-//     }
-
-//     // Push the pharmacy details into the array
-//     pharmacyStatuses.push({
-//       id: pharmacy.place_id,
-//       name: pharmacy.name,
-//       address: pharmacy.vicinity,
-//       phoneNumber: pharmacy.phoneNumber, // Assuming phone number is available
-//       medications: pharmacyDetails,
-//       status
-//     });
-//   }
-
-//   // If no pharmacy has the medication available, check if all are 'No'
-//   const allNo = pharmacyStatuses.every(p => p.status === 'No');
-//   if (allNo) {
-//     return { status: 'No Medication Available', pharmacies: pharmacyStatuses };
-//   }
-
-//   // If there are mixed statuses, return 'Unknown' with all pharmacies
-//   return { status: 'Unknown', pharmacies: pharmacyStatuses };
-// };
-//helper function 
-
-
 exports.checkMedicationAvailability = async (pharmacies, medicationType, medicationDosage) => {
   let allNo = true;
   const pharmacyStatuses = [];
