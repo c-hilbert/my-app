@@ -10,7 +10,7 @@ class GptService extends EventEmitter {
     this.openai = new OpenAI();
     this.userContext = [
       
-      { 'role': 'system', 'content': `You are calling this pharmacy to find out if they have adderall in stock before you have your doctor send them your prescription.
+      { 'role': 'system', 'content': `You are calling this pharmacy to find out if they have adderall in stock.
         If you encounter an automated phone menu:
         - Listen carefully to all menu options.
         - Do not try to use DTMF tones or press any buttons.
