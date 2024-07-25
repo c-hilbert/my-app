@@ -23,16 +23,38 @@ const extractStreetName = (address) => {
 };
 
 const CallProgressScreen = ({ route, navigation }) => {
-  const { pharmacies, medication, dosage, currentIndex } = route.params;
+  const { pharmacies, medication, dosage, currentIndex, callSid: firstCallSid } = route.params;
 
   const [currentPharmacyIndex, setCurrentPharmacyIndex] = useState(currentIndex);
   const [callStatus, setCallStatus] = useState(null); // Ensure setCallStatus is defined
+  const [callSid, setCallSid] = useState(firstCallSid);  // New state to store callSid
 
 
-  console.log('CallProgressScreen rendered'); // Add this log
+  console.log('CallProgressScreen rendered with callSid:', firstCallSid); // Add this log
 
   const handleStop = async () => {
-    navigation.goBack();
+    console.log("Stopping call with callSid:", callSid);
+    if (callSid) {
+      try {
+        const response = await fetch(`https://${SERVER}/call/end-call`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ callSid }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to end the call');
+        }
+
+        Alert.alert('Call Ended', 'The call has been successfully ended.');
+      } catch (error) {
+        console.error('Error ending call:', error);
+        Alert.alert('Error', 'Failed to end the call. Please try again.');
+      }
+    }
+   // navigation.goBack();
   };
 
   const initiateNextCall = (index) => {
@@ -77,6 +99,12 @@ const CallProgressScreen = ({ route, navigation }) => {
       console.log('Call Status:', data);
       const status = data.status;  // Correct the status object
       setCallStatus(status.status);
+
+     // Store the callSid when we receive it
+      if (data.callSid && !callSid) {
+        setCallSid(data.callSid);
+      }
+
       if (status.result && status.result.available) {
         Alert.alert('Medication Found!', `The medication is available at ${pharmacies[currentPharmacyIndex].pharmacy.name}`);
       } else if (status.result && !status.result.available) {

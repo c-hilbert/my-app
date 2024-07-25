@@ -39,7 +39,7 @@ async function makeOutBoundCall(req, res) {
     // Directly store pharmacyId for further use
     gptService.setPharmacyDetails(placeId, medication, dosage);
 
-    res.status(200).json({ success: true }); // Ensure the response is JSON
+    res.status(200).json({ success: true, callSid: call.sid }); // Ensure the response is JSON
   } catch (error) {
     console.error('Error initiating call:', error);
     res.status(500).json({ success: false, error: error.message }); // Ensure the response is JSON

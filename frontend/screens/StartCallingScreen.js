@@ -38,10 +38,9 @@ const StartCallingScreen = ({ route, navigation }) => {
 
         if (data.success) {
           console.log('Call Initiated');
-        } else {
-          console.error('Error initiating call:', error);
-          Alert.alert('Error', 'Failed to initiate call');
-        }
+          //  Navigate to CallProgressScreen with the callSid
+          navigation.navigate('CallProgressScreen', { pharmacies, medication, currentIndex: 0, callSid: data.callSid });
+        } 
       } catch (error) {
         console.error('Error initiating call:', error);
         Alert.alert('Error', 'Failed to initiate call');
@@ -49,8 +48,7 @@ const StartCallingScreen = ({ route, navigation }) => {
     } else {
       Alert.alert('No Pharmacies', 'No pharmacies to call');
     }
-      //  Navigate to CallProgressScreen
-       navigation.navigate('CallProgressScreen', { pharmacies, medication, currentIndex: 0 });
+
 
   };
 
