@@ -26,7 +26,7 @@ const StartCallingScreen = ({ route, navigation }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            phoneNumber: '+15125170223',
+            phoneNumber: pharmacy.pharmacy.formatted_phone_number, // This is already formatted
             placeId: pharmacy.pharmacy.place_id,  // Include pharmacyId
             medication: medication, //include medication type
             dosage: dosage

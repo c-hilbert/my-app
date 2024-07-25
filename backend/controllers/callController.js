@@ -8,7 +8,7 @@ const gptService = new GptService(); // Instantiate GptService
 async function makeOutBoundCall(req, res) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const { placeId, medication, dosage } = req.body; // Receive pharmacyId and eventually phone Number
+  const { phoneNumber, placeId, medication, dosage } = req.body; // Receive pharmacyId and eventually phone Number
   console.log(`makeOutBoundCall called with pharmacyId=${placeId}, medication=${medication}}, dosage=${dosage}`, ); // Add this log
 
   
@@ -21,14 +21,14 @@ async function makeOutBoundCall(req, res) {
   console.log('TWILIO_ACCOUNT_SID:', accountSid);
   console.log('TWILIO_AUTH_TOKEN:', authToken);
   console.log('SERVER:', server);
-  console.log('YOUR_NUMBER:', yourNumber);
+  //console.log('YOUR_NUMBER:', yourNumber);
   console.log('FROM_NUMBER:', fromNumber);
   
 
   try {
     const call = await client.calls.create({
       url: `https://${server}/incoming`,
-      to: yourNumber,
+      to: phoneNumber,
       from: fromNumber,
       record: true, // Enable call recording
       recordingStatusCallback: `https://${server}/recording-status`, // Add a callback URL

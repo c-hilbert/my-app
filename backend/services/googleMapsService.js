@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { formatPhoneNumber } = require('../utils/phoneFormatter');
 
 
 const googleMapsClient = require('@google/maps').createClient({
@@ -51,8 +52,13 @@ const getPharmacyDetails = async (placeId) => {
       fields: ['name', 'formatted_phone_number', 'formatted_address', 'place_id'],
     }).asPromise();
 
+    const result = response.json.result;
+  // Format the phone number
+  if (result.formatted_phone_number) {
+    result.formatted_phone_number = formatPhoneNumber(result.formatted_phone_number);
+  }
     //console.log('Pharmacy details response:', response.json.result);
-    return response.json.result;
+    return result;
   } catch (error) {
     console.error('Error fetching pharmacy details:', error);
     throw new Error('Failed to fetch pharmacy details');

@@ -28,6 +28,7 @@ const CallProgressScreen = ({ route, navigation }) => {
   const [currentPharmacyIndex, setCurrentPharmacyIndex] = useState(currentIndex);
   const [callStatus, setCallStatus] = useState(null); // Ensure setCallStatus is defined
   const [callSid, setCallSid] = useState(firstCallSid);  // New state to store callSid
+  const [isSearchStopped, setIsSearchStopped] = useState(false);
 
 
   console.log('CallProgressScreen rendered with callSid:', firstCallSid); // Add this log
@@ -48,13 +49,18 @@ const CallProgressScreen = ({ route, navigation }) => {
           throw new Error('Failed to end the call');
         }
 
-        Alert.alert('Call Ended', 'The call has been successfully ended.');
       } catch (error) {
         console.error('Error ending call:', error);
-        Alert.alert('Error', 'Failed to end the call. Please try again.');
       }
     }
    // navigation.goBack();
+  // Set the search as stopped
+  setIsSearchStopped(true);
+
+  // Show the "Search ended" alert
+  Alert.alert('Search Ended', 'The search has been stopped.');
+
+
   };
 
   const initiateNextCall = (index) => {
@@ -67,7 +73,7 @@ const CallProgressScreen = ({ route, navigation }) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        phoneNumber: '+15125170223',
+        phoneNumber: pharmacy.pharmacy.formatted_phone_number, // This is already formatted
         placeId: pharmacy.pharmacy.place_id,
         medication: medication,
         dosage: dosage // or whatever dosage is relevant
@@ -107,7 +113,7 @@ const CallProgressScreen = ({ route, navigation }) => {
 
       if (status.result && status.result.available) {
         Alert.alert('Medication Found!', `The medication is available at ${pharmacies[currentPharmacyIndex].pharmacy.name}`);
-      } else if (status.result && !status.result.available) {
+      } else if (status.result && !status.result.available && !isSearchStopped) {
         // Move to the next pharmacy if available status is false
         setCurrentPharmacyIndex(prevIndex => {
           const nextIndex = prevIndex + 1;
