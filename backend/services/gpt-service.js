@@ -5,18 +5,19 @@ const endCall = require('../functions/endCall');  // Ensure the correct path to 
 
 
 class GptService extends EventEmitter {
-  constructor() {
+  constructor(streamService) {
     super();
     this.openai = new OpenAI();
+    this.streamService = streamService;  // Add this line
+
     this.userContext = [
       
       { 'role': 'system', 'content': `You are calling this pharmacy to find out if they have adderall in stock.
-        If you encounter an automated phone menu:
-        - Listen carefully to all menu options.
-        - Do not try to use DTMF tones or press any buttons.
-        - If there's an option to speak with a pharmacist, say "I'd like to speak with a pharmacist please."
-        - If there's no clear option to speak with a pharmacist, wait for the menu to finish and then say "I need to speak with a pharmacist about medication availability."
-        - If the menu repeats, politely insist on speaking with a pharmacist.
+    If you encounter an automated phone menu:
+    - Listen carefully to all menu options.
+    - When you need to press a button, respond ONLY with "DTMF: X", where X is the button to press.
+    - After sending a DTMF tone, wait for the next prompt before responding again.
+    - If there's an option to speak with a pharmacist, choose that option.
     
         When you're speaking with a human (pharmacist or staff):
         - Greet them politely. If it's a person, you can assume that they are the person you need to talk to.
@@ -59,65 +60,74 @@ class GptService extends EventEmitter {
   async completion(text, interactionCount, role = 'user', name = 'user') {
     console.log('Entering completion method');
     this.updateUserContext(name, role, text);
-
+  
     const stream = await this.openai.chat.completions.create({
-
       model: 'gpt-4-1106-preview',
       messages: this.userContext,
       stream: true,
     });
-
+  
     let completeResponse = '';
     let partialResponse = '';
     let finishReason = '';
-
+  
     for await (const chunk of stream) {
       let content = chunk.choices[0]?.delta?.content || '';
       let deltas = chunk.choices[0].delta;
       finishReason = chunk.choices[0].finish_reason;
-
+  
       completeResponse += content;
       partialResponse += content;
-
+ 
+  
       if (content.trim().slice(-1) === '•' || finishReason === 'stop') {
         const gptReply = { 
           partialResponseIndex: this.partialResponseIndex,
           partialResponse
         };
 
-        this.emit('gptreply', gptReply, interactionCount);
+        console.log('gptReply.partialResponse:', gptReply.partialResponse);
+
+        // Only emit gptReply if it's not a DTMF command
+        if (!gptReply.partialResponse.includes('DTMF:')) {
+          this.emit('gptreply', gptReply, interactionCount);
+        } else {
+          console.log('DTMF command detected, skipping emit');
+          const dtmfMatch = gptReply.partialResponse.match(/DTMF:\s*(\d)/);
+          if (dtmfMatch) {
+            const dtmfDigit = dtmfMatch[1];
+            console.log(`Detected DTMF command: ${dtmfDigit}`);
+            await this.streamService.sendDTMF(dtmfDigit);
+            console.log(`DTMF command ${dtmfDigit} sent`);
+          }
+        }
         this.partialResponseIndex++;
         partialResponse = '';
       }
+  
       // Check for "goodbye" to end the call
       if (content.toLowerCase().includes('bye')) {
         const callSid = this.userContext.find(item => item.content.startsWith('callSid')).content.split(': ')[1];
-        console.log('ending the calL by calling the endcCall function');
+        console.log('ending the call by calling the endCall function');
         setTimeout(async () => {
           const endCallResult = await endCall({ callSid });
           console.log(endCallResult);
-          const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n'); // Generate full transcript
-         
-          const placeId = this.placeId; // Get pharmacyId
-          const medication = this.medication; // Get medication
-          const dosage = this.dosage; // Get dosage
-          this.emit('fullTranscript', fullTranscript, placeId, medication, dosage); // Emit full transcript with params
-   
-
-         // console.log(`Full transcript emitted: ${fullTranscript}`.green); // Log full transcript
+          const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n');
+          
+          const placeId = this.placeId;
+          const medication = this.medication;
+          const dosage = this.dosage;
+          this.emit('fullTranscript', fullTranscript, placeId, medication, dosage);
         }, 6000);  // Add a 6-second delay before ending the call
       }
-      
-
     }
-
-    
+  
     this.userContext.push({ 'role': 'assistant', 'content': completeResponse });
     console.log(`GPT -> user context length: ${this.userContext.length}`.green);
   }
 
-  
-}
+} 
+
 
 module.exports = { GptService };
 

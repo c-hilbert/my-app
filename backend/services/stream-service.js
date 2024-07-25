@@ -66,9 +66,25 @@ class StreamService extends EventEmitter {
 
   async sendDTMF(digit) {
     try {
+      console.log(`Attempting to send DTMF: ${digit}`);
+      const twiml = `
+        <Response>
+          <Play digits="${digit}"></Play>
+          <Connect>
+            <Stream url="wss://${process.env.SERVER}/connection"></Stream>
+          </Connect>
+        </Response>
+      `;
+  
+      console.log('TwiML generated:', twiml);
+  
       await this.twilioClient.calls(this.callSid)
-        .update({sendDigits: digit});
-      console.log(`Sent DTMF: ${digit} using Twilio REST API`);
+        .update({twiml: twiml});
+      console.log(`Sent DTMF: ${digit} and requested stream reconnection`);
+      
+      // Don't wait for reconnection here, let Twilio handle it
+      this.ws.close(); // Close the current WebSocket connection
+      console.log('Closed current WebSocket connection');
     } catch (error) {
       console.error('Error sending DTMF:', error);
     }

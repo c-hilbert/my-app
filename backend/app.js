@@ -84,14 +84,17 @@ function updateCallStatus(status, result) {
 
 
 app.ws('/connection', (ws) => {
+  console.log('New WebSocket connection established');
+
   try {
     ws.on('error', console.error);
     // Filled in from start message
     let streamSid;
     let callSid;
 
-    const gptService = new GptService();
+  
     const streamService = new StreamService(ws);
+    const gptService = new GptService(streamService);
     const transcriptionService = new TranscriptionService();
     const ttsService = new TextToSpeechService({});
   
