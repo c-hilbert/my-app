@@ -79,6 +79,7 @@ class GptService extends EventEmitter {
     let completeResponse = '';
     let partialResponse = '';
     let finishReason = '';
+
   
     for await (const chunk of stream) {
       let content = chunk.choices[0]?.delta?.content || '';
@@ -100,6 +101,25 @@ class GptService extends EventEmitter {
         // Only emit gptReply if it's not a DTMF command
         if (!gptReply.partialResponse.includes('DTMF:')) {
           this.emit('gptreply', gptReply, interactionCount);
+
+            
+          // Check for "bye" to end the call
+          if (gptReply.partialResponse.toLowerCase().includes('bye')) {
+            const callSid = this.userContext.find(item => item.content.startsWith('callSid')).content.split(': ')[1];
+            console.log('ending the call by calling the endCall function');
+            setTimeout(async () => {
+              const endCallResult = await endCall({ callSid });
+              console.log(endCallResult);
+              const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n');
+          
+              const placeId = this.placeId;
+              const medication = this.medication;
+              const dosage = this.dosage;
+              this.emit('fullTranscript', fullTranscript, placeId, medication, dosage);
+            }, 6000);  // Add a 6-second delay before ending the call
+          }
+
+
         } else {
           console.log('DTMF command detected, skipping emit');
           const dtmfMatch = gptReply.partialResponse.match(/DTMF:\s*(\d)/);
@@ -113,22 +133,7 @@ class GptService extends EventEmitter {
         this.partialResponseIndex++;
         partialResponse = '';
       }
-  
-      // Check for "bye" to end the call
-      if (content.toLowerCase().includes('bye')) {
-        const callSid = this.userContext.find(item => item.content.startsWith('callSid')).content.split(': ')[1];
-        console.log('ending the call by calling the endCall function');
-        setTimeout(async () => {
-          const endCallResult = await endCall({ callSid });
-          console.log(endCallResult);
-          const fullTranscript = this.userContext.map(item => `${item.role}: ${item.content}`).join('\n');
-          
-          const placeId = this.placeId;
-          const medication = this.medication;
-          const dosage = this.dosage;
-          this.emit('fullTranscript', fullTranscript, placeId, medication, dosage);
-        }, 6000);  // Add a 6-second delay before ending the call
-      }
+
     }
   
     this.userContext.push({ 'role': 'assistant', 'content': completeResponse });
@@ -136,7 +141,6 @@ class GptService extends EventEmitter {
   }
 
 } 
-
 
 module.exports = { GptService };
 
